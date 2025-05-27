@@ -25,17 +25,17 @@ class Stock extends Model
 
 
 
-    /**
+  /**
      * Get the product of the current stock.
      */
-    public function Product(): BelongsTo
+    public function  product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
     }
 
 
 
-    /**
+  /**
      * Get the store of the current stock.
      */
     public function  store(): BelongsTo

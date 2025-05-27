@@ -10,7 +10,9 @@ use Illuminate\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\ProductRequest;
-
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductExport;
+use App\Imports\ProductImport;
 class ProductController extends Controller
 {
     /**
@@ -18,7 +20,6 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-//dd(request('search'));
         $products = Product::with(['category', 'supplier', 'stock'])
             ->when(request('search'), function($query, $search) {
                 $query->where('name', 'like', "%{$search}%")
@@ -31,7 +32,6 @@ class ProductController extends Controller
         $suppliers = Supplier::all();
 
         if (request()->ajax()) {
-
             return response()->json([
                 'products' => $products->items(),
                 'pagination' => [
@@ -120,30 +120,22 @@ class ProductController extends Controller
         return response()->json(['success' => true]);
     }
 
-    /**
-     * Display the number of orders per product.
-     */
-    public function ordersCount()
-    {
-        $products = Product::select('products.name')
-            ->leftJoin('product_orders', 'products.id', '=', 'product_orders.product_id')
-            ->groupBy('products.id', 'products.name')
-            ->selectRaw('products.name, COUNT(product_orders.order_id) as orders_count')
-            ->get();
-        return view('products.orders_count', compact('products'));
-    }
 
-    /**
-     * Display products with more than 6 orders.
-     */
-    public function productsMoreThan6Orders()
+  /**
+    * @return \Illuminate\Support\Collection
+    */
+    public function export()
     {
-        $products = Product::select('products.id', 'products.name')
-            ->leftJoin('product_orders', 'products.id', '=', 'product_orders.product_id')
-            ->groupBy('products.id', 'products.name')
-            ->selectRaw('products.name, COUNT(product_orders.order_id) as orders_count')
-            ->havingRaw('COUNT(product_orders.order_id) > 6')
-            ->get();
-        return view('products.products_more_than_6_orders', compact('products'));
+        return Excel::download(new ProductExport, 'products.xlsx');
+    }
+     /**
+    * @return \Illuminate\Support\Collection
+    */
+    public function import(Request $request)
+    {
+
+        Excel::import(new ProductImport, $request->file('file'));
+
+        return back()->with('success', 'Products imported successfully.');
     }
 }

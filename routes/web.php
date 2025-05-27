@@ -15,9 +15,6 @@ Route::get('/changeLocale/{locale}', function (string $locale) {
     if (in_array($locale, ['en', 'es', 'fr', 'ar'])) {
         Log::info('Locale before setting: ' . session('locale'));
         session()->put('locale', $locale);
-       // App::setLocale($locale);
-       // app()->setLocale($locale);
-        // session()->save(); // Rely on StartSession middleware to save
         Log::info('Locale after setting: ' . session('locale'));
     }
     return redirect()->back();
@@ -74,4 +71,9 @@ Route::get('/products-more-than-6-orders', [App\Http\Controllers\ProductControll
 Route::get('/order-totals', [App\Http\Controllers\OrderController::class, 'orderTotals'])->name('orders.totals');
 Route::get('/orders-greater-than-60', [OrderController::class, 'ordersGreaterThanOrder60'])->name('orders.greater_than_60');
 
+Route::post("/saveCookie", [DashboardController::class, 'saveCookie'])->name("saveCookie");
+Route::post("/saveSession", [DashboardController::class, 'saveSession'])->name("saveSession");
+Route::post("/saveAvatar", [DashboardController::class, 'saveAvatar'])->name("saveAvatar");
 
+Route::get('products-export', [ProductController::class, 'export'])->name('products.export');
+Route::post('products-import', [ProductController::class, 'import'])->name('products.import');

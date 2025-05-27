@@ -9,19 +9,28 @@ use App\Models\Category;
 use App\Models\Store;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
+use App\Models\User;
+
+use Illuminate\Support\Facades\Cookie;
+use Illuminate\Support\Str;
+
+use Illuminate\Support\Facades\App;
 
 class DashboardController extends Controller
 {
     public function index(): View
     {
-        return view('dashboard');
+        $user = User::find(1); // cherche l'utilisateur dont le id est 1
+        $avatar = $user ? $user->avatar : 'images/default-avatar.png'; // chemin par défaut
+
+        return view('dashboard', ['pic' => $avatar]);
     }
 
     public function customers(): View
     {
-        $customers = Customer::paginate(10);
-       // dd($customers); //dump and dey;
-        return view('customers.index', compact('customers'));
+        return view('customers.index', [
+            'customers' => Customer::all()
+        ]);
     }
 
     public function suppliers(): View
@@ -42,16 +51,14 @@ class DashboardController extends Controller
     {
         $suppliers = Supplier::all();
         return view('products.by-supplier', compact('suppliers'));
-
     }
 
     public function getProductsBySupplier(Supplier $supplier)
     {
 
-        $products = Product::with(['stock','category'])
-        ->where('supplier_id', $supplier->id)
-
-        ->get();
+        $products = Product::with(['stock', 'category'])
+            ->where('supplier_id', $supplier->id)
+            ->get();
         return view('products._products_by_supplier', compact('products'));
     }
 
@@ -64,7 +71,7 @@ class DashboardController extends Controller
     public function getProductsByStore(Store $store)
     {
         $products = Product::with(['category', 'stock'])
-            ->whereHas('stock', function($query) use ($store) {
+            ->whereHas('stock', function ($query) use ($store) {
                 $query->where('store_id', $store->id);
             })
             ->get();
@@ -75,5 +82,35 @@ class DashboardController extends Controller
     public function orders()
     {
         return view("orders.index");
+    }
+
+
+    public function saveCookie()
+    {
+        $name = request()->input("txtCookie");
+        //Cookie::put("UserName",$name,6000000);
+        Cookie::queue("UserName", $name, 6000000);
+        return redirect()->back();
+    }
+
+
+    public function saveSession(Request $request)
+    {
+        $name = $request->input("txtSession");
+        $request->session()->put('SessionName', $name);
+        return redirect()->back();
+    }
+    public function saveAvatar()
+    {
+
+        request()->validate([
+            'avatarFile' => 'required|image',
+        ]);
+        $ext = request()->avatarFile->getClientOriginalExtension();
+        $name = Str::random(30) . time() . "." . $ext;
+        request()->avatarFile->move(public_path('storage/avatars'), $name);
+        $user = User::find(1);
+        $user->update(['avatar' => $name]);
+        return redirect()->back();
     }
 }
